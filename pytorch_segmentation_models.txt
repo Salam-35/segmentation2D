@@ -1,0 +1,12 @@
+Install the package
+pip install git+https://github.com/qubvel/segmentation_models.pytorch
+or 
+pip install segmentation-models-pytorch
+
+Check the website for available models
+https://github.com/qubvel/segmentation_models.pytorch
+
+
+
+
+

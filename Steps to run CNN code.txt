@@ -1,0 +1,35 @@
+1) for RGB images place you Data in "RawData" folder 
+
+   for gray-scale images place you Data in "RawData" folder 
+
+   for 3-CH images first place your gray-scale Data in "GrayData" folder 
+   then run "Original_to_3CH.m", the matlab code will convert images to 3-CH and save in "RawData" folder
+
+kindly make sure that:
+2) Dataset images are in png fromat
+3) Dataset is well shuffled
+4) Dataset folders are in the following format:
+       RawData/
+           /images
+               images_name (1).png
+               images_name (2).png
+                      .
+                      .
+               images_name (m).png
+           /masks
+               images_name (1).png
+               images_name (2).png
+                      .
+                      .
+               images_name (m).png
+5) Each image and it corresponding mask have the same name
+
+6) run CreateFolds.m matlab script to genertate train, test and validation folds in 'Data' folder
+
+7) open config.py and choose the configurations you need
+
+8) run TrainUnet.py
+
+9) the the generated mask for each test fold will be saved in 'Genereated_mask\<model name>' folder 
+   you can compare it with ground truth maks in 'Data\Test' folder 
+
