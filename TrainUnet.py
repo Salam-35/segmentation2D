@@ -242,8 +242,8 @@ if __name__ ==  '__main__':
         # checkpoint_name = save_path + f'/checkpoint_fold_{fold_idx}.pt'
         checkpoint_name = save_path + f'/checkpoint.pt'  
         traindir_fold = traindir + f'fold_{fold_idx}/'
-        testdir_fold = testdir + f'fold_{fold_idx}/' 
-        valdir_fold = valdir + f'fold_{fold_idx}/' 
+        testdir_fold = testdir + f'fold_{fold_idx}/'
+        valdir_fold = valdir + f'fold_{fold_idx}/'
 
         gen_fold_mask = generated_masks + f'/fold_{fold_idx}'
         # Create  Directory

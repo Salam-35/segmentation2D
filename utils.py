@@ -133,7 +133,13 @@ class SegData(Dataset):
         if self.in_channels <= 3:
             # Original approach for 1-3 channels
             image = Image.open(image_path)
-            image = np.array(image)
+            if image.mode == 'I':
+                # uint16 PNG saved as 32-bit int (stored = HU + 1024, range 0-4095)
+                # Normalize to uint8 [0,255] so existing transforms work correctly
+                image = np.array(image, dtype=np.float32)
+                image = np.clip(image / 4095.0 * 255.0, 0, 255).astype(np.uint8)
+            else:
+                image = np.array(image)
         else:
             # For n > 3 channels, use tifffile
             import tifffile
@@ -246,15 +252,19 @@ class TestData(Dataset):
         if self.in_channels <= 3:
             # Original approach for 1-3 channels
             image = Image.open(image_path)
-            image = np.array(image)
+            if image.mode == 'I':
+                # uint16 PNG saved as 32-bit int (stored = HU + 1024, range 0-4095)
+                # Normalize to uint8 [0,255] so existing transforms work correctly
+                image = np.array(image, dtype=np.float32)
+                image = np.clip(image / 4095.0 * 255.0, 0, 255).astype(np.uint8)
+            else:
+                image = np.array(image)
         else:
             # For n > 3 channels, use tifffile
             import tifffile
             image = tifffile.imread(image_path)
             image = image.astype(np.uint8)
-
-        image = Image.open(os.path.join(self.root_dir, self.images_path+'/'+self.img_names[index]))
-        image = np.array(image)
+            image = np.transpose(image, (1, 2, 0))
         # apply transformation
         image = self.img_transforms(image)
         if self.ONN:
