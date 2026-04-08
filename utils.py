@@ -132,14 +132,11 @@ class SegData(Dataset):
         # Handle image loading based on channel count
         if self.in_channels <= 3:
             # Original approach for 1-3 channels
-            image = Image.open(image_path)
-            if image.mode == 'I':
-                # uint16 PNG saved as 32-bit int (stored = HU + 1024, range 0-4095)
-                # Normalize to uint8 [0,255] so existing transforms work correctly
-                image = np.array(image, dtype=np.float32)
-                image = np.clip(image / 4095.0 * 255.0, 0, 255).astype(np.uint8)
-            else:
-                image = np.array(image)
+            image = np.array(Image.open(image_path))
+            if image.dtype != np.uint8:
+                # High bit-depth PNG (uint16 or int32 depending on Pillow version)
+                # stored = HU + 1024, range 0-4095 → normalize to uint8 [0,255]
+                image = np.clip(image.astype(np.float32) / 4095.0 * 255.0, 0, 255).astype(np.uint8)
         else:
             # For n > 3 channels, use tifffile
             import tifffile
@@ -251,14 +248,11 @@ class TestData(Dataset):
 
         if self.in_channels <= 3:
             # Original approach for 1-3 channels
-            image = Image.open(image_path)
-            if image.mode == 'I':
-                # uint16 PNG saved as 32-bit int (stored = HU + 1024, range 0-4095)
-                # Normalize to uint8 [0,255] so existing transforms work correctly
-                image = np.array(image, dtype=np.float32)
-                image = np.clip(image / 4095.0 * 255.0, 0, 255).astype(np.uint8)
-            else:
-                image = np.array(image)
+            image = np.array(Image.open(image_path))
+            if image.dtype != np.uint8:
+                # High bit-depth PNG (uint16 or int32 depending on Pillow version)
+                # stored = HU + 1024, range 0-4095 → normalize to uint8 [0,255]
+                image = np.clip(image.astype(np.float32) / 4095.0 * 255.0, 0, 255).astype(np.uint8)
         else:
             # For n > 3 channels, use tifffile
             import tifffile
