@@ -67,10 +67,11 @@ class SegData(Dataset):
                     transforms.ToTensor(), 
                     ]) 
             elif self.in_channels==3:
-                self.img_transforms = transforms.Compose([ 
+                self.img_transforms = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.Resize((self.h,self.w)),  
-                    transforms.ToTensor(), 
+                    transforms.Grayscale(num_output_channels=3),
+                    transforms.Resize((self.h,self.w)),
+                    transforms.ToTensor(),
                     ])
             else:
                 # New transform for n > 3 channels
@@ -81,20 +82,21 @@ class SegData(Dataset):
             ])
         else:
             if self.in_channels==1:
-                self.img_transforms = transforms.Compose([ 
+                self.img_transforms = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.Grayscale(num_output_channels=1),   
-                    transforms.Resize((self.h,self.w)),  
-                    transforms.ToTensor(), 
-                    transforms.Normalize(mean=self.mean, std=self.std) 
-                    ]) 
+                    transforms.Grayscale(num_output_channels=1),
+                    transforms.Resize((self.h,self.w)),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=self.mean, std=self.std)
+                    ])
             elif self.in_channels==3:
-                self.img_transforms = transforms.Compose([ 
+                self.img_transforms = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.Resize((self.h,self.w)),  
-                    transforms.ToTensor(), 
-                    transforms.Normalize(mean=self.mean, std=self.std)  
-                    ]) 
+                    transforms.Grayscale(num_output_channels=3),
+                    transforms.Resize((self.h,self.w)),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=self.mean, std=self.std)
+                    ])
             else:
                 # New transform for n > 3 channels
                 self.img_transforms = transforms.Compose([
@@ -188,10 +190,11 @@ class TestData(Dataset):
                     transforms.ToTensor(), 
                     ]) 
             elif self.in_channels==3:
-                self.img_transforms = transforms.Compose([ 
+                self.img_transforms = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.Resize((self.h,self.w)),  
-                    transforms.ToTensor(), 
+                    transforms.Grayscale(num_output_channels=3),
+                    transforms.Resize((self.h,self.w)),
+                    transforms.ToTensor(),
                     ])
             else:
                 # New transform for n > 3 channels
@@ -202,20 +205,21 @@ class TestData(Dataset):
             ])
         else:
             if self.in_channels==1:
-                self.img_transforms = transforms.Compose([ 
+                self.img_transforms = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.Grayscale(num_output_channels=1),   
-                    transforms.Resize((self.h,self.w)),  
-                    transforms.ToTensor(), 
-                    transforms.Normalize(mean=self.mean, std=self.std) 
-                    ]) 
+                    transforms.Grayscale(num_output_channels=1),
+                    transforms.Resize((self.h,self.w)),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=self.mean, std=self.std)
+                    ])
             elif self.in_channels==3:
-                self.img_transforms = transforms.Compose([ 
+                self.img_transforms = transforms.Compose([
                     transforms.ToPILImage(),
-                    transforms.Resize((self.h,self.w)),  
-                    transforms.ToTensor(), 
-                    transforms.Normalize(mean=self.mean, std=self.std)  
-                    ]) 
+                    transforms.Grayscale(num_output_channels=3),
+                    transforms.Resize((self.h,self.w)),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=self.mean, std=self.std)
+                    ])
             else:
                 # New transform for n > 3 channels
                 self.img_transforms = transforms.Compose([
