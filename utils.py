@@ -502,13 +502,17 @@ def Createlabels(datadir, Seg_state=False):
     img_names = []
     labels = []
     i = 0
-    for d in os.listdir(datadir):
+    for d in sorted(os.listdir(datadir)):
+        if not os.path.isdir(datadir + d):
+            continue
         categories.append(d)
         if Seg_state:
             if i==1:
                 break
-        temp = os.listdir(datadir + d)
-        img_names.extend(temp) 
+        IMAGE_EXTS = {'.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff'}
+        temp = [f for f in os.listdir(datadir + d)
+                if os.path.splitext(f)[1].lower() in IMAGE_EXTS]
+        img_names.extend(temp)
         n_temp = len(temp)
         if i==0:
             labels = np.zeros((n_temp,1)) 

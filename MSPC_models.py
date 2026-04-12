@@ -54,7 +54,6 @@ class MSPCBlock(nn.Module):
             nn.BatchNorm2d(mid), nn.ReLU(inplace=True)
         )
         # Branch 2: 5×5 depthwise-separable
-        # depthwise: groups=in_channels, out must equal in; then pointwise to mid
         self.b2 = nn.Sequential(
             nn.Conv2d(in_channels, in_channels, 5, padding=2, groups=in_channels, bias=False),
             nn.Conv2d(in_channels, mid, 1, bias=False),
