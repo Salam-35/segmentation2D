@@ -30,6 +30,7 @@ from SelfONN_densenet121_CSCAUNet import SelfONN_CSCAUNet_DenseNet
 from FullSelfONN_densenet121_CSCAUNet import FullSelfONN_CSCAUNet_DenseNet
 import SuperONN_decoders
 import dual_enc_unet
+import MSPC_models
 
 def reset_function_generic(m):
     if hasattr(m,'reset_parameters'): 
@@ -61,6 +62,8 @@ def get_pretrained_model(parentdir, model_type, model_to_load, encoder_depth, en
         'SelfONN_CSCAUnet' : SelfONN_decoders.SelfONN_CSCAUnet,
         'CSCAUnet' : SMP_CSCAUNet.CSCAUnet,
         'SuperONN_Unet' : SuperONN_decoders.SuperONNUnet,
+        'MSPCUnet'          : MSPC_models.MSPCUnet,
+        'MSPCUNetPlusPlus'  : MSPC_models.MSPCUNetPlusPlus,
     }
 
 
@@ -74,7 +77,7 @@ def get_pretrained_model(parentdir, model_type, model_to_load, encoder_depth, en
             model = dec_dict[dec_name](enc_name_1, enc_name_2, encoder_depth = encoder_depth, encoder_weights = encoder_weights, in_channels=in_channels, classes=out_channels, activation=activation)
         else:
             enc_name, dec_name = model_to_load.split('*')
-            if dec_name == 'Unet' or dec_name == 'UnetPlusPlus' or dec_name == 'Unet3Plus':
+            if dec_name in ('Unet', 'UnetPlusPlus', 'Unet3Plus', 'MSPCUnet', 'MSPCUNetPlusPlus'):
                 print('decoder_attention:', str(decoder_attention), '\n')
                 model = dec_dict[dec_name](enc_name, encoder_depth = encoder_depth, encoder_weights = encoder_weights, decoder_attention_type = decoder_attention, in_channels=in_channels, classes=out_channels, activation=activation)
             else:
