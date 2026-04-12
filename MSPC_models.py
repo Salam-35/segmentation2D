@@ -54,15 +54,16 @@ class MSPCBlock(nn.Module):
             nn.BatchNorm2d(mid), nn.ReLU(inplace=True)
         )
         # Branch 2: 5×5 depthwise-separable
+        # depthwise: groups=in_channels, out must equal in; then pointwise to mid
         self.b2 = nn.Sequential(
-            nn.Conv2d(in_channels, mid, 5, padding=2, groups=in_channels, bias=False),
-            nn.Conv2d(mid, mid, 1, bias=False),
+            nn.Conv2d(in_channels, in_channels, 5, padding=2, groups=in_channels, bias=False),
+            nn.Conv2d(in_channels, mid, 1, bias=False),
             nn.BatchNorm2d(mid), nn.ReLU(inplace=True)
         )
         # Branch 3: 7×7 depthwise-separable
         self.b3 = nn.Sequential(
-            nn.Conv2d(in_channels, mid, 7, padding=3, groups=in_channels, bias=False),
-            nn.Conv2d(mid, mid, 1, bias=False),
+            nn.Conv2d(in_channels, in_channels, 7, padding=3, groups=in_channels, bias=False),
+            nn.Conv2d(in_channels, mid, 1, bias=False),
             nn.BatchNorm2d(mid), nn.ReLU(inplace=True)
         )
         # Branch 4: 3×3 dilated rate=3  (effective 7×7)
