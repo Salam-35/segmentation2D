@@ -390,8 +390,8 @@ if __name__ ==  '__main__':
                 optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.0001, amsgrad=False)
                 
         # scheduler
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=lr_factor, patience=epochs_patience, verbose=False, 
-            threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08) 
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=lr_factor, patience=epochs_patience,
+            threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
 
         trainable_params = sum(p.numel() for p in model.parameters(recurse=True) if p.requires_grad) /1000000
         print(f'Trainable parameters: {trainable_params}')
