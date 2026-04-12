@@ -112,7 +112,13 @@ class _MSPCBase(nn.Module):
     def _encode_decode(self, x):
         features = self.base.encoder(x)
         features[-1] = self.mspc(features[-1])
-        decoder_output = self.base.decoder(*features)
+        # UnetPlusPlusDecoder.forward(features) takes a list (not *args);
+        # UnetDecoder.forward(*features) takes unpacked args.
+        # Try unpacked first; fall back to list for UnetPlusPlus.
+        try:
+            decoder_output = self.base.decoder(*features)
+        except TypeError:
+            decoder_output = self.base.decoder(features)
         main_out = self.base.segmentation_head(decoder_output)
         return main_out
 
