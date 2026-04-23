@@ -51,6 +51,12 @@ config['input_std']  = [0.2317]
 # For in_channels=1 models use 'grayscale' (no windowing, just normalization).
 # For in_channels=3 models choose a multi-window variant.
 #
+# Preprocessed data is saved under:
+#   <preprocess_output_root>/<method>/<data_root_name>/<Split>/<fold>/
+# If preprocess_output_root is None, the default is:
+#   <data_root_parent>/preprocess/<method>/<data_root_name>/<Split>/<fold>/
+config['preprocess_output_root'] = None
+
 # Available:
 #   'grayscale'                       — 1ch: pixel = (HU+1024)/4095
 #   'single_window'                   — 3ch: organ window replicated x3

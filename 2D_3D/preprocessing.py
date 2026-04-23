@@ -13,12 +13,11 @@ Usage:
     python preprocessing.py --method multi_window_clahe_gamma_unsharp
     python preprocessing.py --list
 
-Output structure mirrors input:
-    Data/Train/fold_1_<method>/images/
-    Data/Train/fold_1_<method>/masks/   ← masks are just symlinked/copied unchanged
+Output structure:
+    preprocess/<method>/Data/Train/fold_1/images/
+    preprocess/<method>/Data/Train/fold_1/masks/
 """
 
-import os
 import shutil
 import argparse
 import logging
@@ -88,10 +87,14 @@ def apply_clahe(ch: np.ndarray, shape) -> np.ndarray:
     return result.astype(np.float32)
 
 
-def apply_unsharp(ch: np.ndarray) -> np.ndarray:
+def apply_unsharp(
+    ch: np.ndarray,
+    sigma: float = UNSHARP_SIGMA,
+    strength: float = UNSHARP_STRENGTH,
+) -> np.ndarray:
     """Unsharp masking on float [0,1] channel."""
-    blurred = gaussian_filter(ch, sigma=UNSHARP_STRENGTH)
-    sharpened = ch + UNSHARP_STRENGTH * (ch - blurred)
+    blurred = gaussian_filter(ch, sigma=sigma)
+    sharpened = ch + strength * (ch - blurred)
     return np.clip(sharpened, 0.0, 1.0).astype(np.float32)
 
 
@@ -111,16 +114,26 @@ def imagenet_normalize(img_chw: np.ndarray) -> np.ndarray:
     return img_chw
 
 
-def to_rgb_png(img_chw: np.ndarray) -> np.ndarray:
-    """(3, H, W) float [0,1] → (H, W, 3) uint8 for saving as RGB PNG."""
-    hwc = np.transpose(img_chw, (1, 2, 0))
-    return (hwc * 255).clip(0, 255).astype(np.uint8)
+def to_png_array(img_chw: np.ndarray):
+    """(C, H, W) float [0,1] → PNG array and PIL mode."""
+    channels = img_chw.shape[0]
+    if channels == 1:
+        return (img_chw[0] * 255).clip(0, 255).astype(np.uint8), "L"
+    if channels == 3:
+        hwc = np.transpose(img_chw, (1, 2, 0))
+        return (hwc * 255).clip(0, 255).astype(np.uint8), "RGB"
+    raise ValueError(f"Unsupported channel count for PNG export: {channels}")
 
 
 # ──────────────────────────────────────────────────────────────
 #  PREPROCESSING METHODS
-#  Each method: hu (H,W) float32 → (3,H,W) float32 [0,1]
+#  Each method: hu (H,W) float32 → (C,H,W) float32 [0,1]
 # ──────────────────────────────────────────────────────────────
+
+def method_grayscale(hu: np.ndarray) -> np.ndarray:
+    """Single-channel linear HU normalization."""
+    ch = np.clip((hu + HU_OFFSET) / 4095.0, 0.0, 1.0).astype(np.float32)
+    return np.expand_dims(ch, axis=0)
 
 def method_single_window(hu: np.ndarray) -> np.ndarray:
     """Single soft-tissue window, replicated to 3 channels."""
@@ -172,6 +185,7 @@ def method_multi_window_clahe_gamma_unsharp(hu: np.ndarray) -> np.ndarray:
 #  REGISTRY — add new methods here
 # ─────────────────────────────────────────
 METHODS = {
+    "grayscale":                        method_grayscale,
     "single_window":                    method_single_window,
     "multi_window":                     method_multi_window,
     "multi_window_clahe":               method_multi_window_clahe,
@@ -185,14 +199,31 @@ METHODS = {
 #  PIPELINE
 # ──────────────────────────────────────────────────────────────
 
-def process_split(subdir: str, split_name: str, method_name: str, fn, data_root: Path):
+def resolve_output_root(cfg, data_root: Path, cli_output_root=None) -> Path:
+    """Resolve the shared root used to store all preprocessed datasets."""
+    if cli_output_root:
+        return Path(cli_output_root)
+
+    configured_root = cfg.get("preprocess_output_root")
+    if configured_root:
+        return Path(configured_root)
+
+    return data_root.parent / "preprocess"
+
+
+def process_split(
+    subdir: str,
+    split_name: str,
+    method_name: str,
+    fn,
+    data_root: Path,
+    method_root: Path = None,
+):
+    if method_root is None:
+        method_root = data_root.parent / "preprocess" / method_name
+
     src_img_dir = data_root / subdir / split_name / "images"
     src_msk_dir = data_root / subdir / split_name / "masks"
-    out_split   = f"{split_name}_{method_name}"
-    dst_img_dir = data_root / subdir / out_split / "images"
-    dst_msk_dir = data_root / subdir / out_split / "masks"
-    dst_img_dir.mkdir(parents=True, exist_ok=True)
-    dst_msk_dir.mkdir(parents=True, exist_ok=True)
 
     if not src_img_dir.exists():
         log.warning(f"Source not found, skipping: {src_img_dir}")
@@ -203,18 +234,25 @@ def process_split(subdir: str, split_name: str, method_name: str, fn, data_root:
         log.warning(f"No PNG files in {src_img_dir}")
         return
 
-    log.info(f"[{subdir}/{split_name}] {len(img_files)} slices → {out_split}")
+    dataset_root_name = data_root.name or "Data"
+    dst_split_dir = method_root / dataset_root_name / subdir / split_name
+    dst_img_dir = dst_split_dir / "images"
+    dst_msk_dir = dst_split_dir / "masks"
+    dst_img_dir.mkdir(parents=True, exist_ok=True)
+    dst_msk_dir.mkdir(parents=True, exist_ok=True)
+
+    log.info(f"[{subdir}/{split_name}] {len(img_files)} slices → {dst_split_dir}")
 
     for img_path in tqdm(img_files, desc=f"{subdir}/{split_name}", unit="slice"):
         # ── Load raw HU ──
         hu = load_hu(img_path)
 
         # ── Apply method ──
-        img_chw = fn(hu)          # (3, H, W) float [0,1]
+        img_chw = fn(hu)          # (C, H, W) float [0,1]
 
-        # ── Save as RGB PNG ──
-        rgb = to_rgb_png(img_chw)  # (H, W, 3) uint8
-        Image.fromarray(rgb, mode='RGB').save(str(dst_img_dir / img_path.name))
+        # ── Save as grayscale or RGB PNG ──
+        png_array, png_mode = to_png_array(img_chw)
+        Image.fromarray(png_array, mode=png_mode).save(str(dst_img_dir / img_path.name))
 
         # ── Copy mask unchanged ──
         msk_path = src_msk_dir / img_path.name
@@ -224,7 +262,7 @@ def process_split(subdir: str, split_name: str, method_name: str, fn, data_root:
     # Copy metadata JSON if exists
     meta_src = data_root / subdir / split_name / "slice_metadata.json"
     if meta_src.exists():
-        shutil.copy2(str(meta_src), str(data_root / subdir / out_split / "slice_metadata.json"))
+        shutil.copy2(str(meta_src), str(dst_split_dir / "slice_metadata.json"))
 
 
 def main():
@@ -241,6 +279,16 @@ def main():
                         help="Preprocessing method name. Defaults to config['preprocess_method']")
     parser.add_argument("--list", action="store_true",
                         help="List all available methods")
+    parser.add_argument(
+        "--output-root",
+        type=str,
+        default=None,
+        help=(
+            "Base output directory for preprocessed datasets. Final layout becomes "
+            "<output-root>/<method>/<data_root_name>/<Split>/<fold>/. "
+            "Defaults to config['preprocess_output_root'] or <data_root_parent>/preprocess."
+        ),
+    )
     args = parser.parse_args()
 
     if args.list or args.method is None:
@@ -259,11 +307,15 @@ def main():
         return
 
     fn = METHODS[args.method]
+    preprocess_root = resolve_output_root(cfg, data_root, args.output_root)
+    method_root = preprocess_root / args.method
+    dataset_output_root = method_root / (data_root.name or "Data")
     log.info(f"Method   : {args.method}")
     log.info(f"Data root: {data_root}")
+    log.info(f"Output   : {dataset_output_root}")
 
     for subdir, split_name in splits:
-        process_split(subdir, split_name, args.method, fn, data_root)
+        process_split(subdir, split_name, args.method, fn, data_root, method_root)
 
     log.info("Done.")
 

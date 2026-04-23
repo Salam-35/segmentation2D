@@ -94,9 +94,9 @@ def apply_clahe(ch, shape):
                                        clip_limit=CLAHE_CLIP, nbins=256).astype(np.float32)
 
 
-def apply_unsharp(ch, strength=0.5):
+def apply_unsharp(ch, sigma=1.0, strength=0.5):
     from scipy.ndimage import gaussian_filter
-    blurred = gaussian_filter(ch, sigma=strength)
+    blurred = gaussian_filter(ch, sigma=sigma)
     return np.clip(ch + strength * (ch - blurred), 0.0, 1.0).astype(np.float32)
 
 
@@ -130,6 +130,12 @@ PREPROCESS_METHODS = {
         apply_clahe(hu_window(hu, *HU_WINDOWS["soft_tissue"]), hu.shape),
         apply_unsharp(apply_clahe(hu_window(hu, *HU_WINDOWS["organ"]), hu.shape)),
         apply_clahe(hu_window(hu, *HU_WINDOWS["vessel"]), hu.shape),
+    ], axis=0),
+
+    "multi_window_gamma": lambda hu: np.stack([
+        apply_gamma(hu_window(hu, *HU_WINDOWS["soft_tissue"])),
+        apply_gamma(hu_window(hu, *HU_WINDOWS["organ"])),
+        apply_gamma(hu_window(hu, *HU_WINDOWS["vessel"])),
     ], axis=0),
 
     "multi_window_clahe_gamma_unsharp": lambda hu: np.stack([
